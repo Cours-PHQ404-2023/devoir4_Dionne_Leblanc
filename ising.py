@@ -71,11 +71,11 @@ class Ising:
         return energie_post_flip - energie_pre_flip
 
     def iteration_aleatoire(self):
-        """Renverse un spin aléatoire avec probabilité ~ e^(-ΔE * T).
+        """Renverse un spin aléatoire avec probabilité ~ e^(-ΔE / T).
 
         Cette fonction met à jour la grille avec la nouvelle valeur de spin
         """
-        ...
+        # random_float = np.random.random() # retourne une valeur comprise dans [0.0, 1.0)
 
     def simulation(self, nombre_iterations):
         """Simule le système en effectuant des itérations aléatoires.
