@@ -6,7 +6,7 @@ import numba as nb
 -> MONTE CARLO (au complet)
 
 -> ~~Ising.difference_energie~~
--> Ising.iteration_aleatoire
+-> ~~Ising.iteration_aleatoire~~
 -> Ising.simulation
 -> ~~Ising.aimantation~~
 
@@ -59,14 +59,16 @@ class Ising:
         self.energie = self.calcule_energie()
 
     def difference_energie(self, x, y):
-        """Retourne la différence d'énergie après avoir inversé le spin à la position (x, y).
+        """Retourne la différence d'énergie comme si le spin à la position (x, y)
+        était inversé.
         """
         # Énergie avant le flip
         energie_pre_flip = self.calcule_energie()
-        # flip du spin situé à (x,y)
-        self.spins *= -1
-        # Énergie après le flip
+        
+        # calcul de l'énergie avec inversion du spin à (x,y)
+        self.spins[x,y] *= -1
         energie_post_flip = self.calcule_energie()
+        self.spins[x,y] *= -1
 
         return energie_post_flip - energie_pre_flip
 
@@ -75,7 +77,13 @@ class Ising:
 
         Cette fonction met à jour la grille avec la nouvelle valeur de spin
         """
-        # random_float = np.random.random() # retourne une valeur comprise dans [0.0, 1.0)
+        random_float = np.random.random() # retourne une valeur aléatoire uniforme comprise dans [0.0, 1.0)
+        random_coords = np.random.randint(self.taille, size=2) # coordonnées aléatoires
+
+        Delta_E = self.difference_energie(random_coords[0], random_coords[1])
+
+        if random_float < np.exp(-Delta_E/self.temperature): # flip avec probabilité exp(-Delta_E/T)
+            self.spins[random_coords[0], random_coords[1]] *= -1
 
     def simulation(self, nombre_iterations):
         """Simule le système en effectuant des itérations aléatoires.
