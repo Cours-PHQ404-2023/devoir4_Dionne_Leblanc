@@ -3,19 +3,12 @@ import numba as nb
 
 """
 ::: À faire :::
--> MONTE CARLO (au complet)
-
--> ~~Ising.difference_energie~~
--> ~~Ising.iteration_aleatoire~~
--> Ising.simulation
--> ~~Ising.aimantation~~
-
--> Observable.est_rempli
--> Observable.temps_correlation
--> Observable.moyenne
+-> Fonction qui écrit la shit intéressante dans un CSV
+-> Fonction qui run la simulation pour des températures diff avec les incr.
+-> Rendre Observable numbafied aussi??s
 """
 
-@nb.jit(nopython=True)
+@nb.njit
 def ising_aleatoire(temperature, taille):
     """ Génère une grille aléatoire de spins.
 
@@ -78,12 +71,14 @@ class Ising:
         Cette fonction met à jour la grille avec la nouvelle valeur de spin
         """
         random_float = np.random.random() # retourne une valeur aléatoire uniforme comprise dans [0.0, 1.0)
-        random_coords = np.random.randint(self.taille, size=2) # coordonnées aléatoires
+        # coordonnées aléatoires
+        random_x_coord = np.random.randint(self.taille)
+        random_y_coord = np.random.randint(self.taille)
 
-        Delta_E = self.difference_energie(random_coords[0], random_coords[1])
+        Delta_E = self.difference_energie(random_x_coord, random_y_coord)
 
         if random_float < np.exp(-Delta_E/self.temperature): # flip avec probabilité exp(-Delta_E/T)
-            self.spins[random_coords[0], random_coords[1]] *= -1
+            self.spins[random_x_coord, random_y_coord] *= -1
 
     def simulation(self, nombre_iterations):
         """Simule le système en effectuant des itérations aléatoires.
@@ -101,10 +96,9 @@ class Ising:
                 energie -= self.spins[x, y] * self.spins[x, (y + 1) % n]
         return energie
 
-    @property
-    def aimantation(self):
+    def calcule_aimantation(self):
         """Retourne l'aimantation actuelle de la grille de spins."""
-        return np.sum(self.spins, axis=(0,1))
+        return np.sum(self.spins)
 
 
 class Observable:
@@ -156,7 +150,7 @@ class Observable:
 
     def est_rempli(self):
         """Retourne vrai si le binnage est complété."""
-        ...
+        return self.nombre_valeurs[0] == 2**self.nombre_niveaux
 
     def erreur(self):
         """Retourne l'erreur sur le mesure moyenne de l'observable.
@@ -176,11 +170,52 @@ class Observable:
             )
         return erreurs[self.niveau_erreur]
 
-    def temps_correlation(self):
-        """Retourne le temps de corrélation."""
-        ...
-        # Indice : Similaire à la fonction erreur
+    def temps_correlation(self, erreurs):
+        """Retourne le temps de corrélation. Basé sur (16.39) des notes à David S."""
+        ### NOTE : je n'ai pas compris l'indice
+        # calcul du ratio entre l'erreur estimée initiale et la meilleure estimation
+        ratio_des_erreurs = erreurs[-1]/erreurs[0]
+        return (ratio_des_erreurs*ratio_des_erreurs - 1)/2
+
 
     def moyenne(self):
         """Retourne la moyenne des mesures."""
-        ...
+        ### NOTE : Valider avec mon boiii
+        return self.sommes[0]/self.nombre_valeurs[0] # la moyenne arithmétique des mesures
+
+
+def monte_carlo(Grille, iter_intermesure=1e3, iter_thermalisation=1e6, niveaux_binning=16):
+    """Desc."""
+
+    # initialization des observables
+    Aimantation = Observable(niveaux_binning)
+    Energie = Observable(niveaux_binning)
+
+    # Thermalization de la grille de spins
+    print("Thermalisation.")
+    Grille.simulation(iter_thermalisation)
+
+    print("Collecte des mesures.")
+    # remplissage des listes de binning
+    for _ in range(2^niveaux_binning):
+        # brouillage de la grille entre les mesures
+        Grille.simulation(iter_intermesure)
+
+        # Calcul des valeurs actuelles des opérateurs
+        aimantation_courante = Grille.calcule_aimantation()
+        energie_courante = Grille.calcule_energie()
+
+        # Ajouter les valeurs courantes au observables
+        Aimantation.ajout_mesure(aimantation_courante)
+        Energie.ajout_mesure(energie_courante)
+
+    return Grille, Aimantation, Energie
+    
+
+
+
+
+
+
+
+
