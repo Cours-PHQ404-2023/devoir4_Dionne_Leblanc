@@ -184,18 +184,18 @@ class Observable:
         return self.sommes[0]/self.nombre_valeurs[0] # la moyenne arithmétique des mesures
 
 
-def monte_carlo(Grille, iter_intermesure=1e3, iter_thermalisation=1e6, niveaux_binning=16):
+def etape_monte_carlo(Grille, iter_intermesure=1e3, iter_thermalisation=1e6, niveaux_binning=16):
     """Desc."""
 
     # initialization des observables
     Aimantation = Observable(niveaux_binning)
     Energie = Observable(niveaux_binning)
 
-    # Thermalization de la grille de spins
-    print("Thermalisation.")
+    # Thermalisation de la grille de spins
+    print("Thermalisation")
     Grille.simulation(iter_thermalisation)
 
-    print("Collecte des mesures.")
+    print("Collecte des mesures")
     # remplissage des listes de binning
     for _ in range(2^niveaux_binning):
         # brouillage de la grille entre les mesures
@@ -210,6 +210,39 @@ def monte_carlo(Grille, iter_intermesure=1e3, iter_thermalisation=1e6, niveaux_b
         Energie.ajout_mesure(energie_courante)
 
     return Grille, Aimantation, Energie
+
+
+def ecrire_resultats():
+    ...#faire
+    return None
+
+
+def simuler(temperature_ini, temperature_fin, pas_temperature, taille_grille=32, iter_intermesure=1e3, iter_thermalisation=1e6, niveaux_binning=16):
+    """DESCRIPTION"""
+    # liste des temperatures à simuler    
+    liste_temperatures = np.arange(temperature_ini, temperature_fin, pas_temperature)
+
+    # initialisation de la grille de spins
+    Grille = ising_aleatoire(temperature_ini, taille_grille)
+
+    # Execution de la simulation pour les températures spécifiées
+    for temperature in liste_temperatures:
+        print(f"--- Simulation à T={temperature} en cours ---")
+        Grille.temperature = temperature # mise à jour de la température de la grille
+
+        # Génération des deux observables 'à jour' et récupération de la grille thermalisée à la temp. courante
+        Grille, Aimantation, Energie = etape_monte_carlo(Grille, iter_intermesure, iter_thermalisation, niveaux_binning)
+
+        # Chercher les valeurs importantes
+        moyenne_aimantation = Aimantation.moyenne()
+        erreur_aimantation = Aimantation.erreur()[-1]
+        temps_correlation_aimantation = Aimantation.temps_correlation()
+
+        moyenne_energie = Energie.moyenne()
+        erreur_energie = Energie.erreur()[-1]
+        temps_correlation_energie = Energie.temps_correlation()
+
+        ############################ METTRE LA FONCTION QUI RETOURNE LES RESULTATS
     
 
 
