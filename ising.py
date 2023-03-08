@@ -1,11 +1,9 @@
 import numpy as np
 import numba as nb
+import csv
 
 """
-::: À faire :::
--> Fonction qui écrit la shit intéressante dans un CSV
--> Fonction qui run la simulation pour des températures diff avec les incr.
--> Rendre Observable numbafied aussi??s
+DESC
 """
 
 @nb.njit
@@ -101,6 +99,14 @@ class Ising:
         return np.sum(self.spins)
 
 
+# @nb.experimental.jitclass({
+#     "nombre_niveaux" : nb.int64,
+#     "nombre_valeurs" : nb.int64[::1],
+#     "sommes" : nb.float64[::1],
+#     "sommes_carres" : nb.float64[::1],
+#     "valeurs_precedentes" : nb.float64[::1],
+#     "niveau_erreur" : nb.int64
+# })
 class Observable:
     """Utilise la méthode du binning pour calculer des statistiques
     pour un observable.
@@ -110,12 +116,12 @@ class Observable:
     nombre_niveaux : Le nombre de niveaux pour l'algorithme. Le nombre
                      de mesures est exponentiel selon le nombre de niveaux.
     """
-
+    
     def __init__(self, nombre_niveaux):
         self.nombre_niveaux = nombre_niveaux
 
         # Les statistiques pour chaque niveau
-        self.nombre_valeurs = np.zeros(nombre_niveaux + 1, int)
+        self.nombre_valeurs = np.zeros(nombre_niveaux + 1, dtype=np.int64)
         self.sommes = np.zeros(nombre_niveaux + 1)
         self.sommes_carres = np.zeros(nombre_niveaux + 1)
 
@@ -126,6 +132,9 @@ class Observable:
         # La différence de 6 donne de bons résultats.
         # Voir les notes de cours pour plus de détails.
         self.niveau_erreur = self.nombre_niveaux - 6
+
+        # Les erreurs par niveau de binning
+        self.erreurs = np.zeros(self.niveau_erreur + 1)
 
     def ajout_mesure(self, valeur, niveau=0):
         """Ajoute une mesure.
@@ -152,14 +161,13 @@ class Observable:
         """Retourne vrai si le binnage est complété."""
         return self.nombre_valeurs[0] == 2**self.nombre_niveaux
 
-    def erreur(self):
+    def update_erreurs(self):
         """Retourne l'erreur sur le mesure moyenne de l'observable.
 
         Le dernier niveau doit être rempli avant d'utiliser cette fonction.
         """
-        erreurs = np.zeros(self.nombre_niveaux + 1)
         for niveau in range(self.niveau_erreur + 1):
-            erreurs[niveau] = np.sqrt(
+            self.erreurs[niveau] = np.sqrt(
                 (
                     self.sommes_carres[niveau]
                     - self.sommes[niveau]**2 / self.nombre_valeurs[niveau]
@@ -168,15 +176,18 @@ class Observable:
                     * (self.nombre_valeurs[niveau] - 1)
                 )
             )
-        return erreurs[self.niveau_erreur]
+    
+    def erreur(self):
+        """Description"""
+        # meilleure estimation de l'erreur
+        return self.erreurs[self.niveau_erreur]
 
-    def temps_correlation(self, erreurs):
+    def temps_correlation(self):
         """Retourne le temps de corrélation. Basé sur (16.39) des notes à David S."""
         ### NOTE : je n'ai pas compris l'indice
         # calcul du ratio entre l'erreur estimée initiale et la meilleure estimation
-        ratio_des_erreurs = erreurs[-1]/erreurs[0]
+        ratio_des_erreurs = self.erreurs[self.niveau_erreur]/self.erreurs[0]
         return (ratio_des_erreurs*ratio_des_erreurs - 1)/2
-
 
     def moyenne(self):
         """Retourne la moyenne des mesures."""
@@ -184,7 +195,7 @@ class Observable:
         return self.sommes[0]/self.nombre_valeurs[0] # la moyenne arithmétique des mesures
 
 
-def etape_monte_carlo(Grille, iter_intermesure=1e3, iter_thermalisation=1e6, niveaux_binning=16):
+def etape_monte_carlo(Grille, iter_intermesure, iter_thermalisation, niveaux_binning):
     """Desc."""
 
     # initialization des observables
@@ -196,8 +207,8 @@ def etape_monte_carlo(Grille, iter_intermesure=1e3, iter_thermalisation=1e6, niv
     Grille.simulation(iter_thermalisation)
 
     print("Collecte des mesures")
-    # remplissage des listes de binning
-    for _ in range(2^niveaux_binning):
+    # remplissage des listes de binning (pas besoin de self.est_rempli...)
+    for _ in range(2**niveaux_binning):
         # brouillage de la grille entre les mesures
         Grille.simulation(iter_intermesure)
 
@@ -212,18 +223,44 @@ def etape_monte_carlo(Grille, iter_intermesure=1e3, iter_thermalisation=1e6, niv
     return Grille, Aimantation, Energie
 
 
-def ecrire_resultats():
-    ...#faire
-    return None
+def initialiser_fichier_resultats(nom_fichier):
+    with open(nom_fichier, 'w+') as f:
+        writer = csv.writer(f) # objet writer
+        writer.writerow([
+            "temperature",
+            "moyenne_aimantation",
+            "erreur_aimantation",
+            "t_corr_aimantation",
+            "moyenne_energie",
+            "erreur_energie",
+            "t_corr_energie"
+            ]) # les noms des colonnes
 
 
-def simuler(temperature_ini, temperature_fin, pas_temperature, taille_grille=32, iter_intermesure=1e3, iter_thermalisation=1e6, niveaux_binning=16):
+def ecrire_resultats(nom_fichier, temperature, moyenne_aimantation, erreur_aimantation, t_corr_aimantation, moyenne_energie, erreur_energie, t_corr_energie):
+    with open(nom_fichier, 'a') as f:
+        writer = csv.writer(f) # objet writer
+        writer.writerow([
+            temperature,
+            moyenne_aimantation,
+            erreur_aimantation,
+            t_corr_aimantation,
+            moyenne_energie,
+            erreur_energie,
+            t_corr_energie
+            ]) # les noms des colonnes
+
+
+def simuler(temperature_ini, temperature_fin, pas_temperature, nom_fichier="data_monte_carlo_ising.csv", taille_grille=32, iter_intermesure=1e3, iter_thermalisation=1e6, niveaux_binning=16):
     """DESCRIPTION"""
     # liste des temperatures à simuler    
     liste_temperatures = np.arange(temperature_ini, temperature_fin, pas_temperature)
 
     # initialisation de la grille de spins
     Grille = ising_aleatoire(temperature_ini, taille_grille)
+
+    # initialisation du fichier de data
+    initialiser_fichier_resultats(nom_fichier)
 
     # Execution de la simulation pour les températures spécifiées
     for temperature in liste_temperatures:
@@ -233,19 +270,33 @@ def simuler(temperature_ini, temperature_fin, pas_temperature, taille_grille=32,
         # Génération des deux observables 'à jour' et récupération de la grille thermalisée à la temp. courante
         Grille, Aimantation, Energie = etape_monte_carlo(Grille, iter_intermesure, iter_thermalisation, niveaux_binning)
 
+        # Calcul des erreurs à chaque niveau
+        Aimantation.update_erreurs()
+        Energie.update_erreurs()
+
         # Chercher les valeurs importantes
         moyenne_aimantation = Aimantation.moyenne()
-        erreur_aimantation = Aimantation.erreur()[-1]
+        erreur_aimantation = Aimantation.erreur()
         temps_correlation_aimantation = Aimantation.temps_correlation()
 
         moyenne_energie = Energie.moyenne()
-        erreur_energie = Energie.erreur()[-1]
+        erreur_energie = Energie.erreur()
         temps_correlation_energie = Energie.temps_correlation()
 
-        ############################ METTRE LA FONCTION QUI RETOURNE LES RESULTATS
+        ecrire_resultats(nom_fichier,
+                    temperature,
+                    moyenne_aimantation,
+                    erreur_aimantation,
+                    temps_correlation_aimantation,
+                    moyenne_energie,
+                    erreur_energie,
+                    temps_correlation_energie
+                )
+
+        
+if __name__ == "__main__":
+    simuler(4, 0.95 ,-0.1,  niveaux_binning=8)
     
-
-
 
 
 
