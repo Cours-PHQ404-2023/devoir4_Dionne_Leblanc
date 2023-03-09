@@ -98,15 +98,6 @@ class Ising:
         """Retourne l'aimantation actuelle de la grille de spins."""
         return np.sum(self.spins)
 
-
-# @nb.experimental.jitclass({
-#     "nombre_niveaux" : nb.int64,
-#     "nombre_valeurs" : nb.int64[::1],
-#     "sommes" : nb.float64[::1],
-#     "sommes_carres" : nb.float64[::1],
-#     "valeurs_precedentes" : nb.float64[::1],
-#     "niveau_erreur" : nb.int64
-# })
 class Observable:
     """Utilise la méthode du binning pour calculer des statistiques
     pour un observable.
@@ -195,7 +186,7 @@ class Observable:
         return self.sommes[0]/self.nombre_valeurs[0] # la moyenne arithmétique des mesures
 
 
-def etape_monte_carlo(Grille, iter_intermesure, iter_thermalisation, niveaux_binning):
+def etape_monte_carlo(Grille, iter_intermesure, iter_thermalisation, niveaux_binning, update_status_interval=5000):
     """Desc."""
 
     # initialization des observables
@@ -208,7 +199,10 @@ def etape_monte_carlo(Grille, iter_intermesure, iter_thermalisation, niveaux_bin
 
     print("Collecte des mesures")
     # remplissage des listes de binning (pas besoin de self.est_rempli...)
-    for _ in range(2**niveaux_binning):
+    for i in range(2**niveaux_binning):
+        if i % update_status_interval == 0: # faire un printout régulier pour les impatients!
+            print(f"Iteration {i}")
+
         # brouillage de la grille entre les mesures
         Grille.simulation(iter_intermesure)
 
@@ -295,7 +289,7 @@ def simuler(temperature_ini, temperature_fin, pas_temperature, nom_fichier="data
 
         
 if __name__ == "__main__":
-    simuler(4, 0.95 ,-0.1,  niveaux_binning=8)
+    simuler(2.8, 2.29 ,-0.1, niveaux_binning=8)
     
 
 
