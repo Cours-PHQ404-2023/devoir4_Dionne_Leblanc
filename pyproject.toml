@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "dev4-phq404-td-jl"
+version = "0.1.0"
+description = ""
+authors = ["Theo N. Dionne <theo.nathaniel.dionne@usherbrooke.ca>"]
+readme = "README.md"
+packages = [{include = "dev4_phq404_td_jl"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+numpy = "<1.22"
+numba = "^0.56.4"
+matplotlib = "^3.7.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
