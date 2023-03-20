@@ -1,9 +1,10 @@
-import numpy as np
-import numba as nb
 import csv
 
+import numba as nb
+import numpy as np
+
 """
-DESC
+TODO DESC
 """
 
 @nb.njit
@@ -55,7 +56,7 @@ class Ising:
         """
         # Énergie avant le flip
         energie_pre_flip = self.calcule_energie()
-        
+
         # calcul de l'énergie avec inversion du spin à (x,y)
         self.spins[x,y] *= -1
         energie_post_flip = self.calcule_energie()
@@ -107,7 +108,7 @@ class Observable:
     nombre_niveaux : Le nombre de niveaux pour l'algorithme. Le nombre
                      de mesures est exponentiel selon le nombre de niveaux.
     """
-    
+
     def __init__(self, nombre_niveaux):
         self.nombre_niveaux = nombre_niveaux
 
@@ -167,27 +168,27 @@ class Observable:
                     * (self.nombre_valeurs[niveau] - 1)
                 )
             )
-    
+
     def erreur(self):
-        """Description"""
+        # TODO Description
         # meilleure estimation de l'erreur
         return self.erreurs[self.niveau_erreur]
 
     def temps_correlation(self):
         """Retourne le temps de corrélation. Basé sur (16.39) des notes à David S."""
-        ### NOTE : je n'ai pas compris l'indice
+        ### WARNING : je n'ai pas compris l'indice
         # calcul du ratio entre l'erreur estimée initiale et la meilleure estimation
         ratio_des_erreurs = self.erreurs[self.niveau_erreur]/self.erreurs[0]
         return (ratio_des_erreurs*ratio_des_erreurs - 1)/2
 
     def moyenne(self):
         """Retourne la moyenne des mesures."""
-        ### NOTE : Valider avec mon boiii
+        ### WARNING : Valider avec mon boiii
         return self.sommes[0]/self.nombre_valeurs[0] # la moyenne arithmétique des mesures
 
 
 def etape_monte_carlo(Grille, iter_intermesure, iter_thermalisation, niveaux_binning, update_status_interval=5000):
-    """Desc."""
+    # TODO Desc."""
 
     # initialization des observables
     Aimantation = Observable(niveaux_binning)
@@ -218,6 +219,7 @@ def etape_monte_carlo(Grille, iter_intermesure, iter_thermalisation, niveaux_bin
 
 
 def initialiser_fichier_resultats(nom_fichier):
+    # TODO Documenter
     with open(nom_fichier, 'w+') as f:
         writer = csv.writer(f) # objet writer
         writer.writerow([
@@ -231,7 +233,15 @@ def initialiser_fichier_resultats(nom_fichier):
             ]) # les noms des colonnes
 
 
-def ecrire_resultats(nom_fichier, temperature, moyenne_aimantation, erreur_aimantation, t_corr_aimantation, moyenne_energie, erreur_energie, t_corr_energie):
+def ecrire_resultats(nom_fichier,
+                     temperature,
+                     moyenne_aimantation,
+                     erreur_aimantation,
+                     t_corr_aimantation,
+                     moyenne_energie,
+                     erreur_energie,
+                     t_corr_energie):
+    # TODO Documenter
     with open(nom_fichier, 'a') as f:
         writer = csv.writer(f) # objet writer
         writer.writerow([
@@ -245,9 +255,16 @@ def ecrire_resultats(nom_fichier, temperature, moyenne_aimantation, erreur_aiman
             ]) # les noms des colonnes
 
 
-def simuler(temperature_ini, temperature_fin, pas_temperature, nom_fichier="data_monte_carlo_ising.csv", taille_grille=32, iter_intermesure=1e3, iter_thermalisation=1e6, niveaux_binning=16):
-    """DESCRIPTION"""
-    # liste des temperatures à simuler    
+def simuler(temperature_ini,
+            temperature_fin,
+            pas_temperature,
+            nom_fichier="data_monte_carlo_ising.csv",
+            taille_grille=32,
+            iter_intermesure=1e3,
+            iter_thermalisation=1e6,
+            niveaux_binning=16):
+    """ TODO DESCRIPTION"""
+    # liste des temperatures à simuler
     liste_temperatures = np.arange(temperature_ini, temperature_fin, pas_temperature)
 
     # initialisation de la grille de spins
@@ -287,10 +304,10 @@ def simuler(temperature_ini, temperature_fin, pas_temperature, nom_fichier="data
                     temps_correlation_energie
                 )
 
-        
+
 if __name__ == "__main__":
-    simuler(2.8, 2.29 ,-0.1, niveaux_binning=8)
-    
+    simuler(4., 1., -0.1, niveaux_binning=8)
+
 
 
 
