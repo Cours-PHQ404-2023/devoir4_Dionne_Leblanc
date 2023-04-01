@@ -185,7 +185,6 @@ class Observable:
 
     def moyenne(self):
         """Retourne la moyenne des mesures."""
-        ### WARNING : Valider avec mon boiii
         return self.sommes[0]/self.nombre_valeurs[0] # la moyenne arithmétique des mesures
 
 
@@ -268,7 +267,28 @@ def ecrire_resultats(nom_fichier,
                      moyenne_energie,
                      erreur_energie,
                      t_corr_energie):
-    # TODO Documenter
+    """Cette fonction permet d'écrire les résultats dans un fichier. Ces résultat
+    sont écris en grille de valeurs assosicées par rangées
+
+    Paramètres
+    ----------
+    nom_fichier: str
+        Nom du fichier dans lequel écrire.
+    temperature: float
+        Température du système de spins.
+    moyenne_aimantation: float
+        Moyenne de l'aimantation du système.
+    erreur_aimantation: float
+        Erreur sur la moyenne de l'aimantation.
+    t_corr_aimantation: float
+        Temps de corrélation sur l'aimantation.
+    moyenne_energie: float
+        Moyenne de l'énergie du système.
+    erreur_energie: float
+        Erreur sur la moyenne
+    t_corr_energie: float
+
+    """
     with open(nom_fichier, 'a') as f:
         writer = csv.writer(f) # objet writer
         writer.writerow([
@@ -294,7 +314,24 @@ def simuler(temperature_ini,
 
     Paramètres
     ----------
-    # TODO
+    temperature_ini: float
+        Température initiale des simulations.
+    temperature_fin: float
+        Température de fin.
+    pas_temperature: float
+        Intervalle en chaque température de la simulation.
+    nom_fichier="data_monte_carlo_ising.csv": str
+        Nom du fichier où enregistrer les résultats.
+    taille_grille: int
+        Nombre de spin dans un côté de la grille représentant notre système
+        (32 par défaut).
+    iter_intermesure: int
+        Nombre d'itération entre les mesures (1 000 par défaut).
+    iter_thermalisation:
+        Nombre d'itération pour effectuer la thermalisation
+        (1 000 000 par défaut).
+    niveaux_binning=16:
+        Puissance de 2 du nombre de mesure (16 par défaut).
     """
     # liste des temperatures à simuler
     liste_temperatures = np.arange(temperature_ini, temperature_fin, pas_temperature)
@@ -338,7 +375,7 @@ def simuler(temperature_ini,
 
 
 if __name__ == "__main__":
-    simuler(4., 1., -0.1, niveaux_binning=8)
+    simuler(3., 2. ,-0.1, niveaux_binning=10)
 
 
 
