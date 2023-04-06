@@ -1,9 +1,11 @@
-import numpy as np
-import numba as nb
 import csv
 
+import numba as nb
+import numpy as np
+
 """
-DESC
+Ce document contient les classes et méthodes requises pour effectuer des
+simulations du modèle d'Ising.
 """
 
 @nb.njit
@@ -55,7 +57,7 @@ class Ising:
         """
         # Énergie avant le flip
         energie_pre_flip = self.calcule_energie()
-        
+
         # calcul de l'énergie avec inversion du spin à (x,y)
         self.spins[x,y] *= -1
         energie_post_flip = self.calcule_energie()
@@ -107,7 +109,7 @@ class Observable:
     nombre_niveaux : Le nombre de niveaux pour l'algorithme. Le nombre
                      de mesures est exponentiel selon le nombre de niveaux.
     """
-    
+
     def __init__(self, nombre_niveaux):
         self.nombre_niveaux = nombre_niveaux
 
@@ -167,27 +169,51 @@ class Observable:
                     * (self.nombre_valeurs[niveau] - 1)
                 )
             )
-    
+
     def erreur(self):
-        """Description"""
-        # meilleure estimation de l'erreur
+        """meilleure estimation de l'erreur
+        """
         return self.erreurs[self.niveau_erreur]
 
     def temps_correlation(self):
-        """Retourne le temps de corrélation. Basé sur (16.39) des notes à David S."""
-        ### NOTE : je n'ai pas compris l'indice
+        """Retourne le temps de corrélation. Basé sur (16.39) des notes à
+        David S."""
+        ### WARNING : je n'ai pas compris l'indice
         # calcul du ratio entre l'erreur estimée initiale et la meilleure estimation
         ratio_des_erreurs = self.erreurs[self.niveau_erreur]/self.erreurs[0]
         return (ratio_des_erreurs*ratio_des_erreurs - 1)/2
 
     def moyenne(self):
         """Retourne la moyenne des mesures."""
-        ### NOTE : Valider avec mon boiii
         return self.sommes[0]/self.nombre_valeurs[0] # la moyenne arithmétique des mesures
 
 
 def etape_monte_carlo(Grille, iter_intermesure, iter_thermalisation, niveaux_binning, update_status_interval=5000):
-    """Desc."""
+    """Cette fonction effectue la précdure de Monte-Carlo pour une grille donnée.
+
+    Paramètres
+    ----------
+    Grille: ising.Ising
+        Grille de spin (avant la précdure).
+    iter_intermesure: int
+        Nombre d'itérations entre les mesures.
+    iter_thermalisation: int
+        Nombre d'itérations pour réchauffer le système.
+    niveaux_binning: int
+        L'exposant du nombre de mesure à effectuer (2^niveaux).
+    updata_status: int
+        Nombre d'itération avant d'afficher un message pendant la procédure.
+        Sert à garder l'utilisateur au courant du progrès.
+
+    Retourne
+    --------
+    Grille: ising.Ising
+        Grille de spin (après la précdure).
+    Aimantation: float
+        Aimantation de la grille.
+    Énergie: float
+        Énergie de la grille.
+    """
 
     # initialization des observables
     Aimantation = Observable(niveaux_binning)
@@ -218,6 +244,8 @@ def etape_monte_carlo(Grille, iter_intermesure, iter_thermalisation, niveaux_bin
 
 
 def initialiser_fichier_resultats(nom_fichier):
+    """Crée le fichier qui servira à stocker les résultats.
+    """
     with open(nom_fichier, 'w+') as f:
         writer = csv.writer(f) # objet writer
         writer.writerow([
@@ -231,7 +259,36 @@ def initialiser_fichier_resultats(nom_fichier):
             ]) # les noms des colonnes
 
 
-def ecrire_resultats(nom_fichier, temperature, moyenne_aimantation, erreur_aimantation, t_corr_aimantation, moyenne_energie, erreur_energie, t_corr_energie):
+def ecrire_resultats(nom_fichier,
+                     temperature,
+                     moyenne_aimantation,
+                     erreur_aimantation,
+                     t_corr_aimantation,
+                     moyenne_energie,
+                     erreur_energie,
+                     t_corr_energie):
+    """Cette fonction permet d'écrire les résultats dans un fichier. Ces résultat
+    sont écris en grille de valeurs assosicées par rangées
+
+    Paramètres
+    ----------
+    nom_fichier: str
+        Nom du fichier dans lequel écrire.
+    temperature: float
+        Température du système de spins.
+    moyenne_aimantation: float
+        Moyenne de l'aimantation du système.
+    erreur_aimantation: float
+        Erreur sur la moyenne de l'aimantation.
+    t_corr_aimantation: float
+        Temps de corrélation sur l'aimantation.
+    moyenne_energie: float
+        Moyenne de l'énergie du système.
+    erreur_energie: float
+        Erreur sur la moyenne
+    t_corr_energie: float
+
+    """
     with open(nom_fichier, 'a') as f:
         writer = csv.writer(f) # objet writer
         writer.writerow([
@@ -245,9 +302,38 @@ def ecrire_resultats(nom_fichier, temperature, moyenne_aimantation, erreur_aiman
             ]) # les noms des colonnes
 
 
-def simuler(temperature_ini, temperature_fin, pas_temperature, nom_fichier="data_monte_carlo_ising.csv", taille_grille=32, iter_intermesure=1e3, iter_thermalisation=1e6, niveaux_binning=16):
-    """DESCRIPTION"""
-    # liste des temperatures à simuler    
+def simuler(temperature_ini,
+            temperature_fin,
+            pas_temperature,
+            nom_fichier="data_monte_carlo_ising.csv",
+            taille_grille=32,
+            iter_intermesure=1e3,
+            iter_thermalisation=1e6,
+            niveaux_binning=16):
+    """ Effectue les simulations Monte-Carlo pour un intervalle de températures.
+
+    Paramètres
+    ----------
+    temperature_ini: float
+        Température initiale des simulations.
+    temperature_fin: float
+        Température de fin.
+    pas_temperature: float
+        Intervalle en chaque température de la simulation.
+    nom_fichier="data_monte_carlo_ising.csv": str
+        Nom du fichier où enregistrer les résultats.
+    taille_grille: int
+        Nombre de spin dans un côté de la grille représentant notre système
+        (32 par défaut).
+    iter_intermesure: int
+        Nombre d'itération entre les mesures (1 000 par défaut).
+    iter_thermalisation:
+        Nombre d'itération pour effectuer la thermalisation
+        (1 000 000 par défaut).
+    niveaux_binning=16:
+        Puissance de 2 du nombre de mesure (16 par défaut).
+    """
+    # liste des temperatures à simuler
     liste_temperatures = np.arange(temperature_ini, temperature_fin, pas_temperature)
 
     # initialisation de la grille de spins
@@ -287,10 +373,10 @@ def simuler(temperature_ini, temperature_fin, pas_temperature, nom_fichier="data
                     temps_correlation_energie
                 )
 
-        
+
 if __name__ == "__main__":
-    simuler(2.8, 2.29 ,-0.1, niveaux_binning=8)
-    
+    simuler(3., 2. ,-0.1, niveaux_binning=10)
+
 
 
 
