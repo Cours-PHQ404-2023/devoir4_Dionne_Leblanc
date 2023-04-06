@@ -178,7 +178,6 @@ class Observable:
     def temps_correlation(self):
         """Retourne le temps de corrélation. Basé sur (16.39) des notes à
         David S."""
-        ### WARNING : je n'ai pas compris l'indice
         # calcul du ratio entre l'erreur estimée initiale et la meilleure estimation
         ratio_des_erreurs = self.erreurs[self.niveau_erreur]/self.erreurs[0]
         return (ratio_des_erreurs*ratio_des_erreurs - 1)/2
