@@ -5,7 +5,6 @@ description = ""
 authors = ["Theo Dionne, Jerome Leblanc"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "dev4_phq404_td_jl"}]
 
 [tool.poetry.dependencies]
 python = "^3.8"
