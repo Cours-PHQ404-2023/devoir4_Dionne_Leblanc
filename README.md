@@ -17,7 +17,7 @@ Théo Dionne et Jérôme Leblanc
 └── rapport.ipynb
 ```
 
-`rapport.ipynb` agit comme notre rapport. À l'intérieur s'y trouve le code pertinent et les figures. Le rapport utilise le code définit dans `ising.py` qui contient les fonctions implémentant la méthode de Monte-Carlo pour un système de spins dispoé dans une grille carrée. Les fichiers `.csv` contiennent les données de sorties des simulations qui sont utilisées pour l'analyse dans le rapport. Afin d'effectuer les-dites simulations, executer le fichier `ising.py`:
+`rapport.ipynb` agit comme notre rapport. À l'intérieur s'y trouve le code pertinent et les figures. Le rapport utilise le code définit dans `ising.py` qui contient les fonctions implémentant la méthode de Monte-Carlo pour un système de spins dispoé dans une grille carrée. Les fichiers `.csv` contiennent les données de sorties des simulations qui sont utilisées pour l'analyse dans le rapport. Afin d'effectuer un exemple des simulations, executer le fichier `ising.py` suivant:
 
 ```bash
 python ising.py
